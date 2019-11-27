@@ -13,9 +13,13 @@ enum class Event {
 };
 
 struct Resultat {
+	unsigned int totalMails;
 	unsigned int answeredMails;
 	unsigned int unansweredMails;
+	unsigned int workingMails;
+	unsigned int totalCalls;
 	unsigned int answeredCalls;
+	unsigned int workingCalls;
 	unsigned int unansweredCalls;
 	float meanTimeToAnswerMail;
 	float meanTimeToAnswerCall;
@@ -47,7 +51,8 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	};
 	
 	auto const push_mailArrival = [&push_echeancier, &gen](float d) {
-		std::exponential_distribution<float> interArrivalMail(d < 60. ? .5 : 5);
+		//std::exponential_distribution<float> interArrivalMail(d < 60. ? .5 : 5);
+		std::exponential_distribution<float> interArrivalMail(d < 60. ? 2 : .2);
 		push_echeancier(d + interArrivalMail(gen), Event::mailArrival);
 	};
 	
@@ -57,7 +62,7 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	};
 	
 	auto const push_callArrival = [&push_echeancier, &gen](float d) {
-		std::exponential_distribution<float> interArrivalCall(d < 60. ? 5 : (d < 180. ? 1 : 10));
+		std::exponential_distribution<float> interArrivalCall(d < 60. ? .2 : (d < 180. ? 1 : .1));
 		push_echeancier(d + interArrivalCall(gen), Event::callArrival);
 	};
 	
@@ -66,7 +71,7 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		push_echeancier(d + answeringCall(gen), Event::callAnswered);
 	};
 	
-	Resultat result{0u, 0u, 0u, 0u, 0., 0., 0., 0.};
+	Resultat result{0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0., 0., 0., 0.};
 	
 	float date = 0.;
 	float totalTimeToAnswerMail = 0.;
@@ -84,6 +89,7 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		
 		std::uniform_int_distribution<unsigned int> unansweredMailsDist(20, 80);
 		result.unansweredMails = unansweredMailsDist(gen);
+		result.totalMails = result.unansweredMails;
 		
 		Bm = std::min(result.unansweredMails, Nm);
 		result.unansweredMails -= Bm;
@@ -96,6 +102,7 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	
 	auto const MailArrival = [&push_mailArrival, &push_mailAnswered, &Bm, &Nm, &result](float d) {
 		push_mailArrival(d);
+		result.totalMails++;
 		
 		if (Bm < Nm) {
 			Bm++;
@@ -127,6 +134,7 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	
 	auto const CallArrival = [&push_callArrival, &push_callAnswered, &Bc, &Nc, &result](float d) {
 		push_callArrival(d);
+		result.totalCalls++;
 		
 		if (Bc < Nc) {
 			Bc++;
@@ -210,6 +218,9 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	result.staffOccupationRate = (totalTimeSpentOnMails + totalTimeSpentOnCalls) / (240. * N);
 	result.phoneBoothOccupationRate = totalTimeSpentOnCalls / (240. * Ntmax);
 	
+	result.workingCalls = Bc;
+	result.workingMails = Bm;
+	
 	return result;
 }
 
@@ -219,8 +230,11 @@ int main(int argc, char ** argv) {
 	
 	auto const result = simulate(45, 20, 5);
 	
-	printf("%u\t%u\t%u\t%u\n%f\t%f\t%f\t%f\n",
-		  result.answeredMails, result.unansweredMails, result.answeredCalls, result.unansweredCalls,
+	printf("TotalMails : %u\nAnsweredMails : %u\nWorkingMails : %u\nUnansweredMails : %u\n",
+		  result.totalMails, result.answeredMails, result.workingMails, result.unansweredMails);
+	printf("TotalCalls : %u\nAnsweredCalls : %u\nWorkingCalls : %u\nUnansweredCalls : %u\n",
+		  result.totalCalls, result.answeredCalls, result.workingCalls, result.unansweredCalls);
+	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
 		  result.meanTimeToAnswerMail, result.meanTimeToAnswerCall, result.staffOccupationRate, result.phoneBoothOccupationRate);
 	
 	return 0;
