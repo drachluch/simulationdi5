@@ -27,6 +27,41 @@ struct Resultat {
 	float phoneBoothOccupationRate;
 };
 
+struct ResultatAgrege {
+	unsigned int simulations;
+	float totalMails = 0.;
+	float answeredMails = 0.;
+	float unansweredMails = 0.;
+	float workingMails = 0.;
+	float totalCalls = 0.;
+	float answeredCalls = 0.;
+	float workingCalls = 0.;
+	float unansweredCalls = 0.;
+	float meanTimeToAnswerMail = 0.;
+	float meanTimeToAnswerCall = 0.;
+	float staffOccupationRate = 0.;
+	float phoneBoothOccupationRate = 0.;
+
+	ResultatAgrege(unsigned int simulations) : simulations(simulations) {};
+};
+
+ResultatAgrege& operator+=(ResultatAgrege & a, Resultat const & r) {
+	float const s = a.simulations;
+	a.totalMails               += r.totalMails / s;
+	a.answeredMails            += r.answeredMails / s;
+	a.unansweredMails          += r.unansweredMails / s;
+	a.workingMails             += r.workingMails / s;
+	a.totalCalls               += r.totalCalls / s;
+	a.answeredCalls            += r.answeredCalls / s;
+	a.workingCalls             += r.workingCalls / s;
+	a.unansweredCalls          += r.unansweredCalls / s;
+	a.meanTimeToAnswerMail     += r.meanTimeToAnswerMail / s;
+	a.meanTimeToAnswerCall     += r.meanTimeToAnswerCall / s;
+	a.staffOccupationRate      += r.staffOccupationRate / s;
+	a.phoneBoothOccupationRate += r.phoneBoothOccupationRate / s;
+	return a;
+}
+
 /**
  * N : effectif du personnel
  * Ntmax : nombre de postes téléphoniques
@@ -218,20 +253,38 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	return result;
 }
 
-unsigned int convert_or_die(char const * str) {
+unsigned int convert_or_die(char const * str, char const * arg_name) {
 	unsigned long N = strtoul(str, nullptr, 10);
 	if (errno == ERANGE || N > std::numeric_limits<unsigned int>::max()) {
-		std::cerr << "N is out of range." << std::endl;
+		std::cerr << arg_name << " is out of range." << std::endl;
 		exit(1);
 	}
 	return static_cast<unsigned int>(N);
 }
 
 void assert_or_die(bool b, char const * str) {
-	if (b) {
+	if (!b) {
 		std::cerr << str << std::endl;
 		exit(1);
 	}
+}
+
+void printResult(Resultat const & r) {
+	printf("TotalMails : %u\nAnsweredMails : %u\nWorkingMails : %u\nUnansweredMails : %u\n",
+		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
+	printf("TotalCalls : %u\nAnsweredCalls : %u\nWorkingCalls : %u\nUnansweredCalls : %u\n",
+		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
+	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
+		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
+}
+void printResultAgrege(ResultatAgrege const & r) {
+	printf("Nombre de simulations : %u\n", r.simulations);
+	printf("TotalMails : %f\nAnsweredMails : %f\nWorkingMails : %f\nUnansweredMails : %f\n",
+		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
+	printf("TotalCalls : %f\nAnsweredCalls : %f\nWorkingCalls : %f\nUnansweredCalls : %f\n",
+		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
+	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
+		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
 }
 
 int main(int argc, char ** argv) {
@@ -245,21 +298,27 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	unsigned int N = convert_or_die(argv[1]);
-	unsigned int Ntmax = convert_or_die(argv[2]);
-	unsigned int Nt = convert_or_die(argv[3]);
+	unsigned int N = convert_or_die(argv[1], "N");
+	unsigned int Ntmax = convert_or_die(argv[2], "Ntmax");
+	unsigned int Nt = convert_or_die(argv[3], "Nt");
 
-	assert_or_die(Nt > Ntmax, "Nt doit être inférieur à Ntmax.");
-	assert_or_die(Nt > N, "Nt doit être inférieur à N.");
+	assert_or_die(Nt <= Ntmax, "Nt doit être inférieur à Ntmax.");
+	assert_or_die(Nt <= N, "Nt doit être inférieur à N.");
 
-	auto const result = simulate(N, Ntmax, Nt);
+	unsigned int S = 1u;
 
-	printf("TotalMails : %u\nAnsweredMails : %u\nWorkingMails : %u\nUnansweredMails : %u\n",
-		  result.totalMails, result.answeredMails, result.workingMails, result.unansweredMails);
-	printf("TotalCalls : %u\nAnsweredCalls : %u\nWorkingCalls : %u\nUnansweredCalls : %u\n",
-		  result.totalCalls, result.answeredCalls, result.workingCalls, result.unansweredCalls);
-	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
-		  result.meanTimeToAnswerMail, result.meanTimeToAnswerCall, result.staffOccupationRate, result.phoneBoothOccupationRate);
+	if (argc > 4)
+		S = convert_or_die(argv[4], "S");
+	assert_or_die(S > 0u, "S doit être positif strictement.");
+
+	ResultatAgrege meanResult(S);
+
+	for (unsigned int i = 0; i < S; i++) {
+		auto const result = simulate(N, Ntmax, Nt);
+		meanResult += result;
+	}
+
+	printResultAgrege(meanResult);
 
 	return 0;
 }
