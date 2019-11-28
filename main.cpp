@@ -286,6 +286,12 @@ void printResultAgrege(ResultatAgrege const & r) {
 	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
 		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
 }
+void printResultAgregeCSV(ResultatAgrege const & r) {
+	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails,
+		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls,
+		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
+}
 
 int main(int argc, char ** argv) {
 
@@ -293,17 +299,18 @@ int main(int argc, char ** argv) {
 		std::cerr << "Paramètres manquants (" << (argc-1) << " au lieu de 3)" << std::endl;
 		std::cerr << "Les paramètres sont les suivants : N, Ntmax, Nt" << std::endl;
 		std::cerr << "N : effectif total du personnel ;" << std::endl;
-		std::cerr << "Ntmax : nombre de postes téléphoniques ;" << std::endl;
-		std::cerr << "Nt : effectif attribué aux postes téléphoniques au début de la matinée." << std::endl;
+		std::cerr << "Ntmax : le nombre de postes téléphoniques ;" << std::endl;
+		std::cerr << "pNt : pas de l'effectif attribué aux postes téléphoniques au début de la matinée." << std::endl;
 		return 1;
 	}
 
 	unsigned int N = convert_or_die(argv[1], "N");
 	unsigned int Ntmax = convert_or_die(argv[2], "Ntmax");
-	unsigned int Nt = convert_or_die(argv[3], "Nt");
+	unsigned int pNt = convert_or_die(argv[3], "pNt");
 
-	assert_or_die(Nt <= Ntmax, "Nt doit être inférieur à Ntmax.");
-	assert_or_die(Nt <= N, "Nt doit être inférieur à N.");
+	assert_or_die(pNt <= Ntmax, "pNt doit être inférieur à Ntmax.");
+	assert_or_die(pNt <= N, "pNt doit être inférieur à N.");
+	assert_or_die(pNt != 0, "le pas pNt doit être strictement positif.");
 
 	unsigned int S = 1u;
 
@@ -311,14 +318,21 @@ int main(int argc, char ** argv) {
 		S = convert_or_die(argv[4], "S");
 	assert_or_die(S > 0u, "S doit être positif strictement.");
 
-	ResultatAgrege meanResult(S);
+	printf("Nombre de simulations : %u\n", S);
+	puts("Nt\ttM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT");
 
-	for (unsigned int i = 0; i < S; i++) {
-		auto const result = simulate(N, Ntmax, Nt);
-		meanResult += result;
+	for (unsigned int Nt = 0; Nt <= N && Nt <= Ntmax; Nt += pNt) {
+
+		ResultatAgrege meanResult(S);
+
+		for (unsigned int i = 0; i < S; i++) {
+			auto const result = simulate(N, Ntmax, Nt);
+			meanResult += result;
+		}
+
+		printf("%u\t", Nt);
+		printResultAgregeCSV(meanResult);
 	}
-
-	printResultAgrege(meanResult);
 
 	return 0;
 }
