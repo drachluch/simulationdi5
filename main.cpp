@@ -166,15 +166,23 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		}
 	};
 
-	auto const CallArrival = [&push_callArrival, &push_callAnswered, &Bc, &Nc, &result](float d) {
+	auto const CallArrival = [&push_callArrival, &push_callAnswered, &Bc, &Nc, &Bm, &Nm, &Ntmax, &result](float d) {
 		push_callArrival(d);
 		result.totalCalls++;
 
 		if (Bc < Nc) {
 			Bc++;
 			push_callAnswered(d);
-		} else
-			result.unansweredCalls++;
+		} else {
+			if (Bm < Nm && Nc < Ntmax) {
+				// un membre assigné aux courriels passe aux appels
+				Bc++;
+				Nc++;
+				Nm--;
+				push_callAnswered(d);
+			} else
+				result.unansweredCalls++;
+		}
 	};
 
 	auto const CallAnswered = [&push_callAnswered, &push_mailAnswered, &Bc, &Bm, &Nc, &Nm, &result](float d) {
