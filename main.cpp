@@ -67,8 +67,9 @@ ResultatAgrege& operator+=(ResultatAgrege & a, Resultat const & r) {
  * Ntmax : nombre de postes téléphoniques
  * Nt : nombre d'humains affectés à un poste téléphonique
  */
-Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int Nt, unsigned int seed) {
-	std::mt19937 gen(seed);
+Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int Nt, unsigned int seedArrival, unsigned int seedDeparture) {
+	std::mt19937 genArrival(seedArrival);
+	std::mt19937 genDeparture(seedDeparture);
 
 	std::vector<std::pair<float, Event>> echeancier;
 	echeancier.reserve(2048u);
@@ -84,24 +85,24 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		std::push_heap(echeancier.begin(), echeancier.end(), compare);
 	};
 
-	auto const push_mailArrival = [&push_echeancier, &gen](float d) {
+	auto const push_mailArrival = [&push_echeancier, &genArrival](float d) {
 		std::exponential_distribution<float> interArrivalMail(d < 60. ? 2 : .2);
-		push_echeancier(d + interArrivalMail(gen), Event::mailArrival);
+		push_echeancier(d + interArrivalMail(genArrival), Event::mailArrival);
 	};
 
-	auto const push_mailAnswered = [&push_echeancier, &gen](float d) {
+	auto const push_mailAnswered = [&push_echeancier, &genDeparture](float d) {
 		std::uniform_real_distribution<float> answeringMail(3., 7.);
-		push_echeancier(d + answeringMail(gen), Event::mailAnswered);
+		push_echeancier(d + answeringMail(genDeparture), Event::mailAnswered);
 	};
 
-	auto const push_callArrival = [&push_echeancier, &gen](float d) {
+	auto const push_callArrival = [&push_echeancier, &genArrival](float d) {
 		std::exponential_distribution<float> interArrivalCall(d < 60. ? .2 : (d < 180. ? 1 : .1));
-		push_echeancier(d + interArrivalCall(gen), Event::callArrival);
+		push_echeancier(d + interArrivalCall(genArrival), Event::callArrival);
 	};
 
-	auto const push_callAnswered = [&push_echeancier, &gen](float d) {
+	auto const push_callAnswered = [&push_echeancier, &genDeparture](float d) {
 		std::uniform_real_distribution<float> answeringCall(5., 15.);
-		push_echeancier(d + answeringCall(gen), Event::callAnswered);
+		push_echeancier(d + answeringCall(genDeparture), Event::callAnswered);
 	};
 
 	Resultat result{0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0., 0., 0., 0.};
@@ -116,12 +117,12 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 	unsigned int Nc = Nt;
 	unsigned int Nm = N - Nc;
 
-	auto const Begin = [&push_echeancier, &push_callArrival, &push_mailArrival, &push_mailAnswered, &result, &Bm, &gen, &Nm](float d) {
+	auto const Begin = [&push_echeancier, &push_callArrival, &push_mailArrival, &push_mailAnswered, &result, &Bm, &genArrival, &Nm](float d) {
 		push_callArrival(0.);
 		push_mailArrival(0.);
 
 		std::uniform_int_distribution<unsigned int> unansweredMailsDist(20, 80);
-		result.unansweredMails = unansweredMailsDist(gen);
+		result.unansweredMails = unansweredMailsDist(genArrival);
 		result.totalMails = result.unansweredMails;
 
 		Bm = std::min(result.unansweredMails, Nm);
@@ -294,24 +295,30 @@ int main(int argc, char ** argv) {
 	assert_or_die(Nt <= N, "Nt doit être inférieur à N.");
 
 	unsigned int S = 1u;
-	unsigned int seed;
+	unsigned int seedArrival = 0u;
+	unsigned int seedDeparture = 0u;
 
 	if (argc > 4)
 		S = convert_or_die(argv[4], "S");
 	assert_or_die(S > 0u, "S doit être strictement positif.");
 
-	if (argc > 5) {
-		seed = convert_or_die(argv[5], "seed");
-		assert_or_die(seed > 0u, "La seed doit être strictement positif");
-	} else {
-		seed = std::random_device()();
-	}
-	printf("Seed : %u\n", seed);
+	if (argc > 5)
+		seedArrival = convert_or_die(argv[5], "seedArrival");
+	if (seedArrival == 0)
+		seedArrival = std::random_device()();
+
+	if (argc > 6)
+		seedDeparture = convert_or_die(argv[6], "seedDeparture");
+	if (seedDeparture == 0)
+		seedDeparture = std::random_device()();
+
+	printf("SeedArrival : %u\n", seedArrival);
+	printf("SeedDeparture : %u\n", seedDeparture);
 
 	ResultatAgrege meanResult(S);
 
 	for (unsigned int i = 0; i < S; i++) {
-		auto const result = simulate(N, Ntmax, Nt, seed + i);
+		auto const result = simulate(N, Ntmax, Nt, seedArrival + i, seedDeparture + i);
 		meanResult += result;
 	}
 
