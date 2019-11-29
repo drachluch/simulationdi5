@@ -67,9 +67,8 @@ ResultatAgrege& operator+=(ResultatAgrege & a, Resultat const & r) {
  * Ntmax : nombre de postes téléphoniques
  * Nt : nombre d'humains affectés à un poste téléphonique
  */
-Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int Nt) {
-	std::random_device rd;
-	std::mt19937 gen(rd());
+Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int Nt, unsigned int seed) {
+	std::mt19937 gen(seed);
 
 	std::vector<std::pair<float, Event>> echeancier;
 	echeancier.reserve(2048u);
@@ -242,10 +241,10 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		}
 	}
 
-	result.meanTimeToAnswerMail = totalTimeToAnswerMail / result.answeredMails;
-	result.meanTimeToAnswerCall = totalTimeToAnswerCall / result.answeredCalls;
+	result.meanTimeToAnswerMail = totalTimeToAnswerMail / result.totalMails;
+	result.meanTimeToAnswerCall = totalTimeToAnswerCall / result.totalCalls;
 	result.staffOccupationRate = (totalTimeSpentOnMails + totalTimeSpentOnCalls) / (240. * N);
-	result.phoneBoothOccupationRate = totalTimeSpentOnCalls / (240. * Ntmax);
+	result.phoneBoothOccupationRate = Ntmax == 0 ? 0 : totalTimeSpentOnCalls / (240. * Ntmax);
 
 	result.workingCalls = Bc;
 	result.workingMails = Bm;
@@ -269,23 +268,6 @@ void assert_or_die(bool b, char const * str) {
 	}
 }
 
-void printResult(Resultat const & r) {
-	printf("TotalMails : %u\nAnsweredMails : %u\nWorkingMails : %u\nUnansweredMails : %u\n",
-		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
-	printf("TotalCalls : %u\nAnsweredCalls : %u\nWorkingCalls : %u\nUnansweredCalls : %u\n",
-		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
-	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
-		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
-}
-void printResultAgrege(ResultatAgrege const & r) {
-	printf("Nombre de simulations : %u\n", r.simulations);
-	printf("TotalMails : %f\nAnsweredMails : %f\nWorkingMails : %f\nUnansweredMails : %f\n",
-		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
-	printf("TotalCalls : %f\nAnsweredCalls : %f\nWorkingCalls : %f\nUnansweredCalls : %f\n",
-		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
-	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
-		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
-}
 void printResultAgregeCSV(ResultatAgrege const & r) {
 	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
 		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails,
@@ -308,15 +290,22 @@ int main(int argc, char ** argv) {
 	unsigned int Ntmax = convert_or_die(argv[2], "Ntmax");
 	unsigned int pNt = convert_or_die(argv[3], "pNt");
 
-	assert_or_die(pNt <= Ntmax, "pNt doit être inférieur à Ntmax.");
-	assert_or_die(pNt <= N, "pNt doit être inférieur à N.");
 	assert_or_die(pNt != 0, "le pas pNt doit être strictement positif.");
 
 	unsigned int S = 1u;
+	unsigned int seed;
 
 	if (argc > 4)
 		S = convert_or_die(argv[4], "S");
 	assert_or_die(S > 0u, "S doit être positif strictement.");
+
+	if (argc > 5) {
+		seed = convert_or_die(argv[5], "seed");
+		assert_or_die(seed > 0u, "La seed doit être strictement positif");
+	} else {
+		seed = std::random_device()();
+	}
+	printf("Seed : %u\n", seed);
 
 	printf("Nombre de simulations : %u\n", S);
 	puts("Nt\ttM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT");
@@ -326,7 +315,7 @@ int main(int argc, char ** argv) {
 		ResultatAgrege meanResult(S);
 
 		for (unsigned int i = 0; i < S; i++) {
-			auto const result = simulate(N, Ntmax, Nt);
+			auto const result = simulate(N, Ntmax, Nt, seed + i);
 			meanResult += result;
 		}
 
