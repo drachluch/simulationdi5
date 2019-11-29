@@ -270,13 +270,19 @@ void assert_or_die(bool b, char const * str) {
 }
 
 void printResultAgregeCSV(ResultatAgrege const & r) {
-	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t",
 		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails,
 		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls,
 		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
 }
 
+int readAndSimulate();
+
 int main(int argc, char ** argv) {
+
+	if (argc == 1) {
+		return readAndSimulate();
+	}
 
 	if (argc < 4) {
 		std::cerr << "Paramètres manquants (" << (argc-1) << " au lieu de 3)" << std::endl;
@@ -325,7 +331,56 @@ int main(int argc, char ** argv) {
 	printf("Nombre de simulations : %u\n", S);
 	puts("tM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT");
 	printResultAgregeCSV(meanResult);
+	puts("");
 
 	return 0;
 }
 
+int readAndSimulate() {
+
+	unsigned int N = 0u;
+	unsigned int Ntmax = 0u;
+	unsigned int Nt = 0u;
+	unsigned int S = 0u;
+	unsigned int seedArrival = 0u;
+	unsigned int seedDeparture = 0u;
+
+	puts("N\tNtmax\tNt\tS\ttM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT\tsA\tsD");
+
+	for (;;) {
+		std::cin >> N;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+		std::cin >> Ntmax;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+		std::cin >> Nt;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+		std::cin >> S;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+		std::cin >> seedArrival;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+		std::cin >> seedDeparture;
+		if (std::cin.fail() || std::cin.eof()) return 0;
+
+		assert_or_die(Nt <= Ntmax, "Nt doit être inférieur à Ntmax.");
+		assert_or_die(Nt <= N, "Nt doit être inférieur à N.");
+
+		assert_or_die(S > 0u, "S doit être strictement positif.");
+
+		if (seedArrival == 0)
+			seedArrival = std::random_device()();
+
+		if (seedDeparture == 0)
+			seedDeparture = std::random_device()();
+
+		ResultatAgrege meanResult(S);
+
+		for (unsigned int i = 0; i < S; i++) {
+			auto const result = simulate(N, Ntmax, Nt, seedArrival + i, seedDeparture + i);
+			meanResult += result;
+		}
+
+		printf("%u\t%u\t%u\t%u\t", N, Ntmax, Nt, S);
+		printResultAgregeCSV(meanResult);
+		printf("%u\t%u\n", seedArrival, seedDeparture);
+	}
+}
