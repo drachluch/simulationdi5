@@ -241,10 +241,10 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		}
 	}
 
-	result.meanTimeToAnswerMail = totalTimeToAnswerMail / result.answeredMails;
-	result.meanTimeToAnswerCall = totalTimeToAnswerCall / result.answeredCalls;
+	result.meanTimeToAnswerMail = totalTimeToAnswerMail / result.totalMails;
+	result.meanTimeToAnswerCall = totalTimeToAnswerCall / result.totalCalls;
 	result.staffOccupationRate = (totalTimeSpentOnMails + totalTimeSpentOnCalls) / (240. * N);
-	result.phoneBoothOccupationRate = totalTimeSpentOnCalls / (240. * Ntmax);
+	result.phoneBoothOccupationRate = Ntmax == 0 ? 0 : totalTimeSpentOnCalls / (240. * Ntmax);
 
 	result.workingCalls = Bc;
 	result.workingMails = Bm;
