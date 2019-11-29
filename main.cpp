@@ -269,21 +269,10 @@ void assert_or_die(bool b, char const * str) {
 	}
 }
 
-void printResult(Resultat const & r) {
-	printf("TotalMails : %u\nAnsweredMails : %u\nWorkingMails : %u\nUnansweredMails : %u\n",
-		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
-	printf("TotalCalls : %u\nAnsweredCalls : %u\nWorkingCalls : %u\nUnansweredCalls : %u\n",
-		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
-	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
-		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
-}
-void printResultAgrege(ResultatAgrege const & r) {
-	printf("Nombre de simulations : %u\n", r.simulations);
-	printf("TotalMails : %f\nAnsweredMails : %f\nWorkingMails : %f\nUnansweredMails : %f\n",
-		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails);
-	printf("TotalCalls : %f\nAnsweredCalls : %f\nWorkingCalls : %f\nUnansweredCalls : %f\n",
-		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls);
-	printf("Temps moyen d'attente d'un mail : %f\nTemps moyen d'attente d'un appel : %f\nOccupation du personnel : %f\nOccupation des postes téléphoniques : %f\n",
+void printResultAgregeCSV(ResultatAgrege const & r) {
+	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n",
+		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails,
+		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls,
 		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
 }
 
@@ -318,7 +307,9 @@ int main(int argc, char ** argv) {
 		meanResult += result;
 	}
 
-	printResultAgrege(meanResult);
+	printf("Nombre de simulations : %u\n", S);
+	puts("tM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT");
+	printResultAgregeCSV(meanResult);
 
 	return 0;
 }
