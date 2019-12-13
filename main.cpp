@@ -27,39 +27,17 @@ struct Resultat {
 	float phoneBoothOccupationRate;
 };
 
-struct ResultatAgrege {
-	unsigned int simulations;
-	float totalMails = 0.;
-	float answeredMails = 0.;
-	float unansweredMails = 0.;
-	float workingMails = 0.;
-	float totalCalls = 0.;
-	float answeredCalls = 0.;
-	float workingCalls = 0.;
-	float unansweredCalls = 0.;
-	float meanTimeToAnswerMail = 0.;
-	float meanTimeToAnswerCall = 0.;
-	float staffOccupationRate = 0.;
-	float phoneBoothOccupationRate = 0.;
-
-	ResultatAgrege(unsigned int simulations) : simulations(simulations) {};
+struct ResultatAgregation {
+	float average;
+	float ecartType;
 };
 
-ResultatAgrege& operator+=(ResultatAgrege & a, Resultat const & r) {
-	float const s = a.simulations;
-	a.totalMails               += r.totalMails / s;
-	a.answeredMails            += r.answeredMails / s;
-	a.unansweredMails          += r.unansweredMails / s;
-	a.workingMails             += r.workingMails / s;
-	a.totalCalls               += r.totalCalls / s;
-	a.answeredCalls            += r.answeredCalls / s;
-	a.workingCalls             += r.workingCalls / s;
-	a.unansweredCalls          += r.unansweredCalls / s;
-	a.meanTimeToAnswerMail     += r.meanTimeToAnswerMail / s;
-	a.meanTimeToAnswerCall     += r.meanTimeToAnswerCall / s;
-	a.staffOccupationRate      += r.staffOccupationRate / s;
-	a.phoneBoothOccupationRate += r.phoneBoothOccupationRate / s;
-	return a;
+template <typename T>
+ResultatAgregation agregate(std::vector<T> const & values) {
+	ResultatAgregation r{0., 0.};
+	r.average = std::accumulate(values.begin(), values.end(), 0., [](T const accu, T const current) { return accu + current; }) / values.size();
+	r.ecartType = std::sqrt(std::accumulate(values.begin(), values.end(), 0., [&r](T const accu, T const current) { return accu + std::pow(current - r.average, 2); }) / (values.size() -1));
+	return r;
 }
 
 /**
@@ -213,8 +191,6 @@ Resultat simulate(unsigned int const N, unsigned int const Ntmax, unsigned int N
 		totalTimeSpentOnMails += Bm * difference;
 		totalTimeSpentOnCalls += Bc * difference;
 
-		//std::cerr << p.first << ", " << (unsigned int) p.second << std::endl;
-
 		date = p.first;
 
 		switch(p.second) {
@@ -269,73 +245,6 @@ void assert_or_die(bool b, char const * str) {
 	}
 }
 
-void printResultAgregeCSV(ResultatAgrege const & r) {
-	printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t",
-		  r.totalMails, r.answeredMails, r.workingMails, r.unansweredMails,
-		  r.totalCalls, r.answeredCalls, r.workingCalls, r.unansweredCalls,
-		  r.meanTimeToAnswerMail, r.meanTimeToAnswerCall, r.staffOccupationRate, r.phoneBoothOccupationRate);
-}
-
-int readAndSimulate();
-
-int main(int argc, char ** argv) {
-
-	if (argc == 1) {
-		return readAndSimulate();
-	}
-
-	if (argc < 4) {
-		std::cerr << "Paramètres manquants (" << (argc-1) << " au lieu de 3)" << std::endl;
-		std::cerr << "Les paramètres sont les suivants : N, Ntmax, Nt" << std::endl;
-		std::cerr << "N : effectif total du personnel ;" << std::endl;
-		std::cerr << "Ntmax : nombre de postes téléphoniques ;" << std::endl;
-		std::cerr << "Nt : effectif attribué aux postes téléphoniques au début de la matinée." << std::endl;
-		return 1;
-	}
-
-	unsigned int N = convert_or_die(argv[1], "N");
-	unsigned int Ntmax = convert_or_die(argv[2], "Ntmax");
-	unsigned int Nt = convert_or_die(argv[3], "Nt");
-
-	assert_or_die(Nt <= Ntmax, "Nt doit être inférieur à Ntmax.");
-	assert_or_die(Nt <= N, "Nt doit être inférieur à N.");
-
-	unsigned int S = 1u;
-	unsigned int seedArrival = 0u;
-	unsigned int seedDeparture = 0u;
-
-	if (argc > 4)
-		S = convert_or_die(argv[4], "S");
-	assert_or_die(S > 0u, "S doit être strictement positif.");
-
-	if (argc > 5)
-		seedArrival = convert_or_die(argv[5], "seedArrival");
-	if (seedArrival == 0)
-		seedArrival = std::random_device()();
-
-	if (argc > 6)
-		seedDeparture = convert_or_die(argv[6], "seedDeparture");
-	if (seedDeparture == 0)
-		seedDeparture = std::random_device()();
-
-	printf("SeedArrival : %u\n", seedArrival);
-	printf("SeedDeparture : %u\n", seedDeparture);
-
-	ResultatAgrege meanResult(S);
-
-	for (unsigned int i = 0; i < S; i++) {
-		auto const result = simulate(N, Ntmax, Nt, seedArrival + i, seedDeparture + i);
-		meanResult += result;
-	}
-
-	printf("Nombre de simulations : %u\n", S);
-	puts("tM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT");
-	printResultAgregeCSV(meanResult);
-	puts("");
-
-	return 0;
-}
-
 int readAndSimulate() {
 
 	unsigned int N = 0u;
@@ -345,7 +254,11 @@ int readAndSimulate() {
 	unsigned int seedArrival = 0u;
 	unsigned int seedDeparture = 0u;
 
-	puts("N\tNtmax\tNt\tS\ttM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT\tsA\tsD");
+	printf("N\tNtmax\tNt\tS\t");
+	printf("tM\taM\twM\tuM\ttC\taC\twC\tuC\ttmaM\ttmaC\toqP\toqT\t");
+	printf("sA\tsD\t");
+	printf("etM\teaM\tewM\teuM\tetC\teaC\tewC\teuC\tetmaM\tetmaC\teoqP\teoqT\t");
+	puts("");
 
 	for (;;) {
 		std::cin >> N;
@@ -372,15 +285,74 @@ int readAndSimulate() {
 		if (seedDeparture == 0)
 			seedDeparture = std::random_device()();
 
-		ResultatAgrege meanResult(S);
+		std::vector<unsigned int> vTotalMails;
+		std::vector<unsigned int> vAnsweredMails;
+		std::vector<unsigned int> vUnansweredMails;
+		std::vector<unsigned int> vWorkingMails;
+		std::vector<unsigned int> vTotalCalls;
+		std::vector<unsigned int> vAnsweredCalls;
+		std::vector<unsigned int> vWorkingCalls;
+		std::vector<unsigned int> vUnansweredCalls;
+		std::vector<float> vMeanTimeToAnswerMail;
+		std::vector<float> vMeanTimeToAnswerCall;
+		std::vector<float> vStaffOccupationRate;
+		std::vector<float> vPhoneBoothOccupationRate;
+
+		vTotalMails.reserve(S);
+		vAnsweredMails.reserve(S);
+		vUnansweredMails.reserve(S);
+		vWorkingMails.reserve(S);
+		vTotalCalls.reserve(S);
+		vAnsweredCalls.reserve(S);
+		vWorkingCalls.reserve(S);
+		vUnansweredCalls.reserve(S);
+		vMeanTimeToAnswerMail.reserve(S);
+		vMeanTimeToAnswerCall.reserve(S);
+		vStaffOccupationRate.reserve(S);
+		vPhoneBoothOccupationRate.reserve(S);
 
 		for (unsigned int i = 0; i < S; i++) {
 			auto const result = simulate(N, Ntmax, Nt, seedArrival + i, seedDeparture + i);
-			meanResult += result;
+			vTotalMails.push_back(result.totalMails);
+			vAnsweredMails.push_back(result.answeredMails);
+			vUnansweredMails.push_back(result.unansweredMails);
+			vWorkingMails.push_back(result.workingMails);
+			vTotalCalls.push_back(result.totalCalls);
+			vAnsweredCalls.push_back(result.answeredCalls);
+			vWorkingCalls.push_back(result.workingCalls);
+			vUnansweredCalls.push_back(result.unansweredCalls);
+			vMeanTimeToAnswerMail.push_back(result.meanTimeToAnswerMail);
+			vMeanTimeToAnswerCall.push_back(result.meanTimeToAnswerCall);
+			vStaffOccupationRate.push_back(result.staffOccupationRate);
+			vPhoneBoothOccupationRate.push_back(result.phoneBoothOccupationRate);
 		}
 
+		auto const agrTotalMails = agregate(vTotalMails);
+		auto const agrAnsweredMails = agregate(vAnsweredMails);
+		auto const agrUnansweredMails = agregate(vUnansweredMails);
+		auto const agrWorkingMails = agregate(vWorkingMails);
+		auto const agrTotalCalls = agregate(vTotalCalls);
+		auto const agrAnsweredCalls = agregate(vAnsweredCalls);
+		auto const agrWorkingCalls = agregate(vWorkingCalls);
+		auto const agrUnansweredCalls = agregate(vUnansweredCalls);
+		auto const agrMeanTimeToAnswerMail = agregate(vMeanTimeToAnswerMail);
+		auto const agrMeanTimeToAnswerCall = agregate(vMeanTimeToAnswerCall);
+		auto const agrStaffOccupationRate = agregate(vStaffOccupationRate);
+		auto const agrPhoneBoothOccupationRate = agregate(vPhoneBoothOccupationRate);
+
 		printf("%u\t%u\t%u\t%u\t", N, Ntmax, Nt, S);
-		printResultAgregeCSV(meanResult);
-		printf("%u\t%u\n", seedArrival, seedDeparture);
+		printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t",
+		  agrTotalMails.average, agrAnsweredMails.average, agrWorkingMails.average, agrUnansweredMails.average,
+		  agrTotalCalls.average, agrAnsweredCalls.average, agrWorkingCalls.average, agrUnansweredCalls.average,
+		  agrMeanTimeToAnswerMail.average, agrMeanTimeToAnswerCall.average, agrStaffOccupationRate.average, agrPhoneBoothOccupationRate.average);
+		printf("%u\t%u\t", seedArrival, seedDeparture);
+		printf("%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t\n",
+		  agrTotalMails.ecartType, agrAnsweredMails.ecartType, agrWorkingMails.ecartType, agrUnansweredMails.ecartType,
+		  agrTotalCalls.ecartType, agrAnsweredCalls.ecartType, agrWorkingCalls.ecartType, agrUnansweredCalls.ecartType,
+		  agrMeanTimeToAnswerMail.ecartType, agrMeanTimeToAnswerCall.ecartType, agrStaffOccupationRate.ecartType, agrPhoneBoothOccupationRate.ecartType);
 	}
+}
+
+int main(int argc, char ** argv) {
+	return readAndSimulate();
 }
