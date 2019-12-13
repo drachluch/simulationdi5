@@ -42,3 +42,15 @@ For each set of simulations, it prints the following values :
 - oqT the mean "taux d'occupation des postes téléphoniques" ;
 - sA the seed for the arrival events ;
 - sD the seed for the departure events ;
+- etM the standard deviation number of arrived mails ;
+- eaM the standard deviation number of answered mails ;
+- ewM the standard deviation number of mails which had a member of the staff responding to it at 12h00 ;
+- euM the standard deviation number of unanswered mails ;
+- etC the standard deviation number of arrived calls ;
+- eaC the standard deviation number of answered calls ;
+- ewC the standard deviation number of calls which had a member of the staff responding to it at 12h00 ;
+- euC the standard deviation number of unanswered calls ;
+- etmaM the standard deviation "temps moyen entre l'arrivée d'un mail et le début du processus de réponse à ce mail" ;
+- etmaC the standard deviation "temps moyen entre l'arrivée d'un appel et le début du processus de réponse à cet appel" ;
+- eoqP the standard deviation "taux d'occupation du personnel" ;
+- eoqT the standard deviation "taux d'occupation des postes téléphoniques" ;
