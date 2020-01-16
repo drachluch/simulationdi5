@@ -1,56 +1,56 @@
 # simulationdi5
 
-A event oriented simulation.
+Une simulation orientée événement.
 
-There are N members of staff answering to mails and calls between 8h00 and 12h00.
-There are Ntmax phone booths, therefore only Ntmax members can answer the phone simultaneously.
-Nt is the number of members dedicated to answering the phone at 8h00.
+Il y a N membres du personnel qui répondent aux courriels et aux appels entre 8h et 12h.
+Il y a Ntmax postes téléphoniques, donc au plus Ntmax employés peuvent répondre aux appels simultanément.
+Nt est le nombre d'employés dédiés à la réponse aux appels à 8h.
 
-SeedArrival is the seed used to generate the events of arrival of mails and calls.
-SeedDeparture is the seed used to generate the events of end of answering of mails and calls.
+SeedArrival est utilisé pour initialisé le générateur de nombres pseudo-aléatoires dédié aux tirages aléatoires concernant les arrivées des courriels et des appels.
+SeedDeparture est utilisé pour initialisé le générateur de nombres pseudo-aléatoires dédié aux tirages des durées de traitements des courriels et des appels.
 
-S is how many time the simulation is played.
-The nth time, the pair of seeds used is (SeedArrival + n; SeedDeparture + n).
+S est le nombre d'exécutions de la simulation avec le triplet (N, Ntmax, Nt).
+Les SeedArrival' et SeedDeparture' utilisé sont changés pour chaque exécution.
+Pour la nième exécution, SeedArrival' vaut SeedArrival + n et SeedDeparture' vaut SeedDeparture + n.
 
+Le programme lit depuis l'entrée standard les paramètres N, Ntmax, Nt, S, SeedArrival et SeedDeparture dans cet ordre.
+Les paramètres doivent être séparés par un espace, une tabulation ou un retour à la ligne.
+Le programme exécute S fois la simulation avec ces paramètres, puis lit le jeu de paramètres suivant.
+Quand SeedArrival vaut 0, le programme lui donne une nouvelle valeur aléatoire. Il en est de même pour SeedDeparture.
 
-The application listens to the standard input and read from it N, Ntmax, N, S, SeedArrival and SeedDeparture in this order.
-It simulates S times with this parameters, then read again the parameters.
-When SeedArrival is 0, it is given a new randomly generated value.
-When SeedDeparture is 0, it is given a new randomly generated value.
-
-The application stops when it can't read more parameters, when it fails to read a parameter, or when the parameters don't respect the following conditions :
+Le programme s'arrête quand il n'y a plus de paramètres à lire, quand la lecture des paramètres échoue, ou quand les conditions suivantes ne sont pas respectées :
 - Ntmax <= N
 - Nt <= Ntmax
 - S > 0
 
-For each set of simulations, it prints the following values :
+Pour chaque jeu de paramètres, les informations écrites dans la sortie standard concernant les S simulations sont les suivantes :
 - N ;
 - Ntmax ;
 - Nt ;
 - S ;
-- tM the mean number of arrived mails ;
-- aM the mean number of answered mails ;
-- wM the mean number of mails which had a member of the staff responding to it at 12h00 ;
-- uM the mean number of unanswered mails ;
-- tC the mean number of arrived calls ;
-- aC the mean number of answered calls ;
-- wC the mean number of calls which had a member of the staff responding to it at 12h00 ;
-- uC the mean number of unanswered calls ;
-- tmaM the mean "temps moyen entre l'arrivée d'un mail et le début du processus de réponse à ce mail" ;
-- tmaC the mean "temps moyen entre l'arrivée d'un appel et le début du processus de réponse à cet appel" ;
-- oqP the mean "taux d'occupation du personnel" ;
-- oqT the mean "taux d'occupation des postes téléphoniques" ;
-- sA the seed for the arrival events ;
-- sD the seed for the departure events ;
-- etM the standard deviation number of arrived mails ;
-- eaM the standard deviation number of answered mails ;
-- ewM the standard deviation number of mails which had a member of the staff responding to it at 12h00 ;
-- euM the standard deviation number of unanswered mails ;
-- etC the standard deviation number of arrived calls ;
-- eaC the standard deviation number of answered calls ;
-- ewC the standard deviation number of calls which had a member of the staff responding to it at 12h00 ;
-- euC the standard deviation number of unanswered calls ;
-- etmaM the standard deviation "temps moyen entre l'arrivée d'un mail et le début du processus de réponse à ce mail" ;
-- etmaC the standard deviation "temps moyen entre l'arrivée d'un appel et le début du processus de réponse à cet appel" ;
-- eoqP the standard deviation "taux d'occupation du personnel" ;
-- eoqT the standard deviation "taux d'occupation des postes téléphoniques" ;
+- tM le nombre moyen de courriels qui sont arrivés ;
+- aM le nombre moyen de courriels auxquels on a répondu ;
+- wM le nombre moyen de courriels pour lesquels la réponse était en cours à 12h ;
+- uM le nombre moyen de courriels auxquels on n'a pas répondu ;
+- tC le nombre moyen d'appels qui sont arrivés ;
+- aC le nombre moyen d'appels auxquels on a répondu ;
+- wC le nombre moyen d'appels pour lesquels la réponse était en cours à 12h ;
+- uC le nombre moyen d'appels auxquels on n'a pas répondu ;
+- tmaM la moyenne du temps moyen entre l'arrivée d'un courriel et le début du processus de réponse à celui-ci ;
+- tmaC la moyenne du temps moyen entre l'arrivée d'un appel et le début du processus de réponse à celui-ci ;
+- oqP le taux moyen d'occupation du personnel ;
+- oqT le taux moyen d'occupation des postes téléphoniques ;
+- sA sert à initialiser le générateur de nombres pseudo-aléatoires dédié aux arrivées des courriels et des appels ;
+- sD sert à initialiser le générateur de nombres pseudo-aléatoires dédié aux traitements des courriels et des appels ;
+- etM l'écart-type du nombre de courriels qui sont arrivés ;
+- eaM l'écart-type du nombre de courriels auxquels on a répondu ;
+- ewM l'écart-type du nombre de courriels pour lesquels la réponse était en cours à 12h ;
+- euM l'écart-type du nombre de courriels auxquels on n'a pas répondu ;
+- etC l'écart-type du nombre d'appels qui sont arrivés ;
+- eaC l'écart-type du nombre d'appels auxquels on a répondu ;
+- ewC l'écart-type du nombre d'appels pour lesquels la réponse était en cours à 12h ;
+- euC l'écart-type du nombre d'appels auxquels on n'a pas répondu ;
+- etmaM l'écart-type du temps moyen entre l'arrivée d'un courriel et le début du processus de réponse à celui-ci ;
+- etmaC l'écart-type du temps moyen entre l'arrivée d'un appel et le début du processus de réponse à celui-ci ;
+- eoqP l'écart-type du taux d'occupation du personnel ;
+- eoqT l'écart-type du taux d'occupation des postes téléphoniques ;
