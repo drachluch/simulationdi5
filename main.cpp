@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <numeric>
 
 enum class Event {
 	begin,
